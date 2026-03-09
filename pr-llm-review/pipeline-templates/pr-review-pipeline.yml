@@ -1,0 +1,32 @@
+# pr-review-pipeline.yml
+# Wire this pipeline up as a Build Validation branch policy in Azure DevOps Server:
+# Project Settings > Repositories > {Repo} > Policies > Branch Policies > {branch} > Build Validation
+#
+# Store LLM_BASE_URL, LLM_MODEL, and LLM_API_KEY as pipeline variables or in a variable group.
+# Never hardcode secrets in this file.
+
+trigger: none   # Manual + PR policy triggers only
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+      - master
+
+pool:
+  name: Default   # Replace with your on-premises agent pool name
+
+steps:
+  - task: PrLlmReview@1
+    displayName: 'LLM Code Review'
+    inputs:
+      llmBaseUrl:          '$(LLM_BASE_URL)'
+      llmModel:            '$(LLM_MODEL)'
+      llmApiKey:           '$(LLM_API_KEY)'
+      maxFilesPerReview:   20
+      maxLinesPerFile:     300
+      postInlineComments:  true
+      failOnSeverity:      'none'   # Change to 'high' or 'critical' to block PRs
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)

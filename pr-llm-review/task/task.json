@@ -1,0 +1,83 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "PrLlmReview",
+  "friendlyName": "LLM Code Review",
+  "description": "Automatically reviews pull request diffs using an onsite OpenAI-compatible LLM and posts findings as PR comments.",
+  "helpMarkDown": "Fetches the PR diff, sends it to an onsite LLM, and posts the review as a summary comment plus inline line-level comments.",
+  "category": "Utility",
+  "author": "Your Organisation",
+  "version": { "Major": 1, "Minor": 0, "Patch": 0 },
+  "instanceNameFormat": "LLM Code Review",
+  "inputs": [
+    {
+      "name": "llmBaseUrl",
+      "type": "string",
+      "label": "LLM Base URL",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Base URL of the onsite LLM, e.g. http://llm-server/v1"
+    },
+    {
+      "name": "llmModel",
+      "type": "string",
+      "label": "LLM Model Name",
+      "defaultValue": "",
+      "required": true,
+      "helpMarkDown": "Model name to pass in the API request"
+    },
+    {
+      "name": "llmApiKey",
+      "type": "string",
+      "label": "LLM API Key",
+      "defaultValue": "none",
+      "required": false,
+      "helpMarkDown": "API key if required — store as a secret pipeline variable"
+    },
+    {
+      "name": "maxFilesPerReview",
+      "type": "int",
+      "label": "Max Files Per Review",
+      "defaultValue": "20",
+      "required": false,
+      "helpMarkDown": "Cap on the number of files sent to the LLM to avoid context overflow"
+    },
+    {
+      "name": "maxLinesPerFile",
+      "type": "int",
+      "label": "Max Lines Per File",
+      "defaultValue": "300",
+      "required": false,
+      "helpMarkDown": "Files exceeding this line count are truncated with a warning"
+    },
+    {
+      "name": "excludePatterns",
+      "type": "string",
+      "label": "Exclude Patterns",
+      "defaultValue": "**/*.png,**/*.jpg,**/*.gif,**/*.ico,**/*.pdf,**/*.zip,**/*.dll,**/*.exe,**/package-lock.json,**/yarn.lock,**/*.lock,**/*.Designer.cs,**/*.g.cs,**/*Reference.cs,**/migrations/*,**/*.yml,**/*.yaml,**/*.json,**/*.config,**/*.csproj,**/*.sln,**/__snapshots__/*,**/*.snap",
+      "required": false,
+      "helpMarkDown": "Comma-separated glob patterns for files to skip"
+    },
+    {
+      "name": "postInlineComments",
+      "type": "boolean",
+      "label": "Post Inline Comments",
+      "defaultValue": "true",
+      "required": false,
+      "helpMarkDown": "Toggle inline comment posting on specific diff lines on/off"
+    },
+    {
+      "name": "failOnSeverity",
+      "type": "string",
+      "label": "Fail On Severity",
+      "defaultValue": "none",
+      "required": false,
+      "helpMarkDown": "Optionally fail the pipeline when findings reach this level: none, info, low, medium, high, critical"
+    }
+  ],
+  "execution": {
+    "Node20_1": {
+      "target": "dist/index.js"
+    }
+  }
+}

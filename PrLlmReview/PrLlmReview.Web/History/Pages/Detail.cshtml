@@ -1,0 +1,66 @@
+@page "/history/{id:int}"
+@model PrLlmReview.History.Pages.DetailModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = $"Review #{Model.Record?.Id}";
+}
+
+@if (Model.Record is null)
+{
+    <h2>Review not found</h2>
+    <p><a href="/history">Back to list</a></p>
+}
+else
+{
+    var r = Model.Record;
+    <h2>PR #@r.PrId — @r.PrTitle</h2>
+    <p>
+        <strong>Repo:</strong> @r.RepositoryName &nbsp;|&nbsp;
+        <strong>Project:</strong> @r.ProjectName &nbsp;|&nbsp;
+        <strong>Branch:</strong> @r.TargetBranch &nbsp;|&nbsp;
+        <strong>Author:</strong> @r.AuthorName &nbsp;|&nbsp;
+        <strong>Reviewed:</strong> @r.ReviewedAt[..16].Replace("T"," ") UTC &nbsp;|&nbsp;
+        <strong>Files:</strong> @r.FilesReviewed &nbsp;|&nbsp;
+        <strong>Severity:</strong> <span class="badge badge-@r.OverallSeverity">@r.OverallSeverity</span>
+    </p>
+
+    <h3>Overall Assessment</h3>
+    <p>@r.SummaryText</p>
+
+    @if (!string.IsNullOrWhiteSpace(r.FullResultJson))
+    {
+        var result = JsonSerializer.Deserialize<PrLlmReview.Models.LlmReviewResult>(r.FullResultJson);
+        if (result?.InlineComments.Count > 0)
+        {
+            <h3>Inline Comments (@result.InlineComments.Count)</h3>
+
+            var byFile = result.InlineComments.GroupBy(c => c.FilePath);
+            @foreach (var group in byFile)
+            {
+                <h4>@group.Key</h4>
+                <table>
+                    <thead>
+                        <tr><th>Line</th><th>Severity</th><th>Category</th><th>Comment</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in group.OrderBy(c => c.Line))
+                        {
+                            <tr>
+                                <td>@c.Line</td>
+                                <td><span class="badge badge-@c.Severity">@c.Severity</span></td>
+                                <td>@c.Category</td>
+                                <td>@c.Comment</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        }
+        else
+        {
+            <p><em>No inline comments were posted for this review.</em></p>
+        }
+    }
+
+    <p><a href="/history">Back to list</a></p>
+}

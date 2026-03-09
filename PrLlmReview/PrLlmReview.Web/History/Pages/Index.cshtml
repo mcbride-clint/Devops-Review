@@ -1,0 +1,85 @@
+@page
+@model PrLlmReview.History.Pages.IndexModel
+@{
+    ViewData["Title"] = "Review History";
+}
+
+<h2>PR Review History</h2>
+
+<form method="get" class="search-form">
+    <label>
+        Repository:
+        <input type="text" name="repo" value="@Model.Repo" placeholder="e.g. MyRepo" />
+    </label>
+    <label>
+        PR Title contains:
+        <input type="text" name="titleKeyword" value="@Model.TitleKeyword" />
+    </label>
+    <label>
+        Severity:
+        <select name="severity">
+            <option value="">Any</option>
+            @foreach (var s in new[] { "critical","high","medium","low","pass" })
+            {
+                <option value="@s" selected="@(Model.Severity == s ? "selected" : null)">@s</option>
+            }
+        </select>
+    </label>
+    <label>From: <input type="date" name="fromDate" value="@Model.FromDate" /></label>
+    <label>To:   <input type="date" name="toDate"   value="@Model.ToDate"   /></label>
+    <button type="submit">Search</button>
+    <a href="/history">Clear</a>
+</form>
+
+<p>@Model.TotalCount result(s) found.</p>
+
+@if (Model.Records.Count > 0)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Date (UTC)</th>
+                <th>Repo</th>
+                <th>PR</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Branch</th>
+                <th>Files</th>
+                <th>Severity</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model.Records)
+            {
+                <tr>
+                    <td>@r.ReviewedAt[..16].Replace("T"," ")</td>
+                    <td>@r.RepositoryName</td>
+                    <td>#@r.PrId</td>
+                    <td>@r.PrTitle</td>
+                    <td>@r.AuthorName</td>
+                    <td>@r.TargetBranch</td>
+                    <td>@r.FilesReviewed</td>
+                    <td><span class="badge badge-@r.OverallSeverity">@r.OverallSeverity</span></td>
+                    <td><a href="/history/@r.Id">View</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        @if (Model.Page > 1)
+        {
+            <a href="?@Model.BuildQuery(Model.Page - 1)">&#8592; Prev</a>
+        }
+        <span>Page @Model.Page of @Model.TotalPages</span>
+        @if (Model.Page < Model.TotalPages)
+        {
+            <a href="?@Model.BuildQuery(Model.Page + 1)">Next &#8594;</a>
+        }
+    </div>
+}
+else
+{
+    <p><em>No reviews found matching your criteria.</em></p>
+}
