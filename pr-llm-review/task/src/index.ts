@@ -6,12 +6,19 @@ import { FileFilter } from './fileFilter';
 import { LlmClient, mergeResults } from './llmClient';
 import { CommentPoster } from './commentPoster';
 import { buildUserPrompt } from './promptBuilder';
+import { applyCaBundle } from './caConfig';
 
 const SEVERITY_ORDER: OverallSeverity[] = ['pass', 'low', 'medium', 'high', 'critical'];
 
 async function run(): Promise<void> {
   try {
     const inputs = readInputs();
+
+    // Apply custom CA bundle before any outbound HTTPS connections are made
+    if (inputs.caBundlePath) {
+      tl.debug(`Applying custom CA bundle from: ${inputs.caBundlePath}`);
+      applyCaBundle(inputs.caBundlePath);
+    }
 
     const adoClient   = new AdoClient();
     const diffParser  = new DiffParser(adoClient);
@@ -94,9 +101,10 @@ async function run(): Promise<void> {
 }
 
 function readInputs(): TaskInputs {
-  const llmBaseUrl = tl.getInput('llmBaseUrl', true) ?? '';
-  const llmModel   = tl.getInput('llmModel', true) ?? '';
-  const llmApiKey  = tl.getInput('llmApiKey', false) ?? 'none';
+  const llmBaseUrl   = tl.getInput('llmBaseUrl', true) ?? '';
+  const llmModel     = tl.getInput('llmModel', true) ?? '';
+  const llmApiKey    = tl.getInput('llmApiKey', false) ?? 'none';
+  const caBundlePath = tl.getInput('caBundlePath', false) ?? '';
 
   const maxFilesPerReview = parseInt(tl.getInput('maxFilesPerReview', false) ?? '20', 10);
   const maxLinesPerFile   = parseInt(tl.getInput('maxLinesPerFile', false) ?? '300', 10);
@@ -110,7 +118,7 @@ function readInputs(): TaskInputs {
   const postInlineComments = (tl.getInput('postInlineComments', false) ?? 'true').toLowerCase() === 'true';
   const failOnSeverity = (tl.getInput('failOnSeverity', false) ?? 'none').toLowerCase();
 
-  return { llmBaseUrl, llmModel, llmApiKey, maxFilesPerReview, maxLinesPerFile, excludePatterns, postInlineComments, failOnSeverity };
+  return { llmBaseUrl, llmModel, llmApiKey, caBundlePath, maxFilesPerReview, maxLinesPerFile, excludePatterns, postInlineComments, failOnSeverity };
 }
 
 function shouldFailPipeline(failOnSeverity: string, actual: OverallSeverity): boolean {

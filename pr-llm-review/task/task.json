@@ -35,6 +35,14 @@
       "helpMarkDown": "API key if required — store as a secret pipeline variable"
     },
     {
+      "name": "caBundlePath",
+      "type": "string",
+      "label": "CA Bundle Path",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Absolute path to a PEM/CRT CA bundle file on the build agent. Required when your LLM server or ADO server uses a certificate signed by an internal or self-signed CA."
+    },
+    {
       "name": "maxFilesPerReview",
       "type": "int",
       "label": "Max Files Per Review",

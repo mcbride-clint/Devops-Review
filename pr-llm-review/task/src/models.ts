@@ -2,6 +2,7 @@ export interface TaskInputs {
   llmBaseUrl: string;
   llmModel: string;
   llmApiKey: string;
+  caBundlePath: string;
   maxFilesPerReview: number;
   maxLinesPerFile: number;
   excludePatterns: string[];
