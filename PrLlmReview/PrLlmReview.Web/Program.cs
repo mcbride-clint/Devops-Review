@@ -9,14 +9,24 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 
-// Build a shared CA bundle (if configured) for HttpClient certificate validation
-X509Certificate2Collection? customCaBundle = null;
+// Global CA bundle for AdoClientService (and LLM fallback)
+X509Certificate2Collection? globalCaBundle = null;
 var caBundlePath = builder.Configuration["CaBundlePath"];
 if (!string.IsNullOrWhiteSpace(caBundlePath))
 {
-    customCaBundle = new X509Certificate2Collection();
-    customCaBundle.ImportFromPemFile(caBundlePath);
+    globalCaBundle = [];
+    globalCaBundle.ImportFromPemFile(caBundlePath);
 }
+
+// LLM-specific CA bundle; falls back to global if not set
+X509Certificate2Collection? llmCaBundle = null;
+var llmCaBundlePath = builder.Configuration["Llm:CaBundlePath"];
+if (!string.IsNullOrWhiteSpace(llmCaBundlePath))
+{
+    llmCaBundle = [];
+    llmCaBundle.ImportFromPemFile(llmCaBundlePath);
+}
+var effectiveLlmCaBundle = llmCaBundle ?? globalCaBundle;
 
 static HttpClientHandler CreateHandler(X509Certificate2Collection? caBundle)
 {
@@ -42,9 +52,9 @@ builder.Services.AddSingleton<ReviewQueue>();
 builder.Services.AddHostedService<ReviewQueueService>();
 
 builder.Services.AddHttpClient<AdoClientService>()
-    .ConfigurePrimaryHttpMessageHandler(() => CreateHandler(customCaBundle));
+    .ConfigurePrimaryHttpMessageHandler(() => CreateHandler(globalCaBundle));
 builder.Services.AddHttpClient<LlmClientService>()
-    .ConfigurePrimaryHttpMessageHandler(() => CreateHandler(customCaBundle));
+    .ConfigurePrimaryHttpMessageHandler(() => CreateHandler(effectiveLlmCaBundle));
 
 builder.Services.AddScoped<DiffParserService>();
 builder.Services.AddScoped<FileFilterService>();

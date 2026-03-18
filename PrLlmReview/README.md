@@ -57,6 +57,17 @@ Set these via IIS environment variables — **never commit secrets to source con
 
 All other settings live in `appsettings.json` — update `Ado:CollectionUrl`, `Llm:BaseUrl`, `Llm:Model`, and `History:DbPath` for your environment.
 
+### Custom CA Bundles (internal / self-signed certificates)
+
+If your ADO Server or LLM endpoint uses an internal certificate authority, provide a PEM-formatted CA bundle:
+
+| Setting | Scope | Description |
+|---------|-------|-------------|
+| `CaBundlePath` | ADO + LLM fallback | Path to a PEM CA bundle used for all HTTP clients. If `Llm:CaBundlePath` is not set, the LLM client uses this bundle too. |
+| `Llm:CaBundlePath` | LLM only | Path to a PEM CA bundle used exclusively for LLM requests. Overrides the global `CaBundlePath` for the LLM client. |
+
+Leave either value empty to skip custom certificate validation for that client.
+
 ## Build & Deploy
 
 ```bash
