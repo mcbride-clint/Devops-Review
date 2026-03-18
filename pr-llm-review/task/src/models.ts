@@ -8,6 +8,7 @@ export interface TaskInputs {
   excludePatterns: string[];
   postInlineComments: boolean;
   failOnSeverity: string;
+  focusAreas: string[];
 }
 
 export interface PrInfo {

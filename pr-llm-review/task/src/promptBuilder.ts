@@ -1,14 +1,22 @@
 import { DiffChunk, PrInfo } from './models';
 
-export const SYSTEM_PROMPT = `You are an expert .NET and Oracle code reviewer embedded in a CI/CD pipeline.
+const DEFAULT_FOCUS_AREAS = [
+  'Security vulnerabilities (SQL injection, hardcoded secrets, insecure deserialization)',
+  'C#/.NET correctness (null handling, async/await misuse, IDisposable, exception handling)',
+  'Oracle/SQL concerns (unparameterised queries, missing indexes hint, cursor leaks)',
+  'Code quality and best practices (SOLID, DRY, unnecessary complexity)',
+  'Naming conventions and style (.NET naming standards, clarity)',
+];
+
+export function buildSystemPrompt(focusAreas?: string[]): string {
+  const areas = focusAreas && focusAreas.length > 0 ? focusAreas : DEFAULT_FOCUS_AREAS;
+  const numberedAreas = areas.map((a, i) => `${i + 1}. ${a}`).join('\n');
+
+  return `You are an expert code reviewer embedded in a CI/CD pipeline.
 Your job is to review code diffs and return structured feedback.
 
 Focus on these areas in order of priority:
-1. Security vulnerabilities (SQL injection, hardcoded secrets, insecure deserialization)
-2. C#/.NET correctness (null handling, async/await misuse, IDisposable, exception handling)
-3. Oracle/SQL concerns (unparameterised queries, missing indexes hint, cursor leaks)
-4. Code quality and best practices (SOLID, DRY, unnecessary complexity)
-5. Naming conventions and style (.NET naming standards, clarity)
+${numberedAreas}
 
 Return ONLY a valid JSON object. No markdown. No explanation outside the JSON.
 
@@ -26,6 +34,7 @@ Schema:
     }
   ]
 }`;
+}
 
 export function buildUserPrompt(prInfo: PrInfo, chunks: DiffChunk[]): string {
   const totalFiles = chunks.length;

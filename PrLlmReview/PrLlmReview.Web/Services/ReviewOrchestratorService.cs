@@ -112,7 +112,7 @@ public sealed class ReviewOrchestratorService
             try
             {
                 var userPrompt = _promptBuilder.BuildUserPrompt(job, batches[i]);
-                var result = await _llm.ReviewAsync(PromptBuilderService.SystemPrompt, userPrompt, ct);
+                var result = await _llm.ReviewAsync(_promptBuilder.BuildSystemPrompt(), userPrompt, ct);
                 batchResults.Add(result);
             }
             catch (Exception ex)

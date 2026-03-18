@@ -1,12 +1,11 @@
 import { LlmReviewResult, TaskInputs } from './models';
-import { SYSTEM_PROMPT } from './promptBuilder';
 
 const REQUEST_TIMEOUT_MS = 120_000;
 
 export class LlmClient {
   constructor(private readonly inputs: TaskInputs) {}
 
-  async review(userPrompt: string): Promise<LlmReviewResult> {
+  async review(userPrompt: string, systemPrompt: string): Promise<LlmReviewResult> {
     const url = `${this.inputs.llmBaseUrl.replace(/\/$/, '')}/chat/completions`;
 
     const headers: Record<string, string> = {
@@ -22,7 +21,7 @@ export class LlmClient {
       max_tokens: 4096,
       temperature: 0.2,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
     });

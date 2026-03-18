@@ -81,6 +81,14 @@
       "defaultValue": "none",
       "required": false,
       "helpMarkDown": "Optionally fail the pipeline when findings reach this level: none, info, low, medium, high, critical"
+    },
+    {
+      "name": "focusAreas",
+      "type": "string",
+      "label": "Review Focus Areas",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "Optional comma-separated list of review focus areas to override the default prompt. Leave blank to use defaults (security, correctness, SQL, quality, style)."
     }
   ],
   "execution": {

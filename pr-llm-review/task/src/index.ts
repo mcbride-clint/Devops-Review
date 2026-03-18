@@ -5,7 +5,7 @@ import { DiffParser } from './diffParser';
 import { FileFilter } from './fileFilter';
 import { LlmClient, mergeResults } from './llmClient';
 import { CommentPoster } from './commentPoster';
-import { buildUserPrompt } from './promptBuilder';
+import { buildSystemPrompt, buildUserPrompt } from './promptBuilder';
 import { applyCaBundle } from './caConfig';
 
 const SEVERITY_ORDER: OverallSeverity[] = ['pass', 'low', 'medium', 'high', 'critical'];
@@ -58,8 +58,9 @@ async function run(): Promise<void> {
     for (let i = 0; i < llmBatches.length; i++) {
       console.log(`Calling LLM — chunk ${i + 1}/${llmBatches.length}...`);
       try {
+        const systemPrompt = buildSystemPrompt(inputs.focusAreas);
         const userPrompt = buildUserPrompt(prInfo, llmBatches[i]);
-        const result = await llmClient.review(userPrompt);
+        const result = await llmClient.review(userPrompt, systemPrompt);
         batchResults.push(result);
       } catch (err) {
         tl.warning(`LLM call for chunk ${i + 1} failed: ${String(err)}`);
@@ -118,7 +119,13 @@ function readInputs(): TaskInputs {
   const postInlineComments = (tl.getInput('postInlineComments', false) ?? 'true').toLowerCase() === 'true';
   const failOnSeverity = (tl.getInput('failOnSeverity', false) ?? 'none').toLowerCase();
 
-  return { llmBaseUrl, llmModel, llmApiKey, caBundlePath, maxFilesPerReview, maxLinesPerFile, excludePatterns, postInlineComments, failOnSeverity };
+  const focusAreasRaw = tl.getInput('focusAreas', false) ?? '';
+  const focusAreas = focusAreasRaw
+    .split(',')
+    .map(a => a.trim())
+    .filter(a => a.length > 0);
+
+  return { llmBaseUrl, llmModel, llmApiKey, caBundlePath, maxFilesPerReview, maxLinesPerFile, excludePatterns, postInlineComments, failOnSeverity, focusAreas };
 }
 
 function shouldFailPipeline(failOnSeverity: string, actual: OverallSeverity): boolean {

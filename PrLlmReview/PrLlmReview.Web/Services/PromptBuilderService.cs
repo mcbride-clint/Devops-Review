@@ -4,33 +4,53 @@ namespace PrLlmReview.Services;
 
 public sealed class PromptBuilderService
 {
-    public const string SystemPrompt = """
-        You are an expert .NET and Oracle code reviewer.
-        Your job is to review code diffs and return structured feedback.
+    private static readonly string[] DefaultFocusAreas =
+    [
+        "Security vulnerabilities (SQL injection, hardcoded secrets, insecure deserialization)",
+        "C#/.NET correctness (null handling, async/await misuse, IDisposable, exceptions)",
+        "Oracle/SQL concerns (unparameterised queries, cursor leaks, missing bind variables)",
+        "Code quality and best practices (SOLID, DRY, unnecessary complexity)",
+        "Naming conventions and style (.NET naming standards, clarity)",
+    ];
 
-        Focus on these areas in order of priority:
-        1. Security vulnerabilities (SQL injection, hardcoded secrets, insecure deserialization)
-        2. C#/.NET correctness (null handling, async/await misuse, IDisposable, exceptions)
-        3. Oracle/SQL concerns (unparameterised queries, cursor leaks, missing bind variables)
-        4. Code quality and best practices (SOLID, DRY, unnecessary complexity)
-        5. Naming conventions and style (.NET naming standards, clarity)
+    private readonly IConfiguration _config;
 
-        Return ONLY a valid JSON object. No markdown. No explanation outside the JSON.
+    public PromptBuilderService(IConfiguration config)
+    {
+        _config = config;
+    }
 
-        {
-          "summary": "string — 2-4 sentence overall assessment",
-          "overallSeverity": "critical | high | medium | low | pass",
-          "inlineComments": [
-            {
-              "filePath":  "string",
-              "line":      "number",
-              "severity":  "critical | high | medium | low | info",
-              "category":  "security | correctness | sql | quality | style",
-              "comment":   "string"
-            }
-          ]
-        }
-        """;
+    public string BuildSystemPrompt()
+    {
+        var configured = _config.GetSection("Review:FocusAreas").Get<string[]>();
+        var areas = configured is { Length: > 0 } ? configured : DefaultFocusAreas;
+
+        var numberedAreas = string.Join("\n", areas.Select((a, i) => $"{i + 1}. {a}"));
+
+        return $"""
+            You are an expert code reviewer embedded in a CI/CD pipeline.
+            Your job is to review code diffs and return structured feedback.
+
+            Focus on these areas in order of priority:
+            {numberedAreas}
+
+            Return ONLY a valid JSON object. No markdown. No explanation outside the JSON.
+
+            {{
+              "summary": "string — 2-4 sentence overall assessment",
+              "overallSeverity": "critical | high | medium | low | pass",
+              "inlineComments": [
+                {{
+                  "filePath":  "string",
+                  "line":      "number",
+                  "severity":  "critical | high | medium | low | info",
+                  "category":  "security | correctness | sql | quality | style",
+                  "comment":   "string"
+                }}
+              ]
+            }}
+            """;
+    }
 
     public string BuildUserPrompt(ReviewJob job, List<DiffChunk> chunks)
     {
